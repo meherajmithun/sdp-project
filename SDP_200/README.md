@@ -53,6 +53,7 @@ python -m unittest discover -s tests -v
 
 - [Improvement tracker](docs/IMPROVEMENTS.md)
 - [Feature plan](docs/FEATURE_PLAN.md)
+- [Crop management study plan](docs/CROP_MANAGEMENT_PLAN.md)
 
 ## Common problems
 
