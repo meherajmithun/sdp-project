@@ -49,6 +49,11 @@ Register an account, sign in, then add a crop from **Crop Management**. Press `E
 python -m unittest discover -s tests -v
 ```
 
+## Documentation
+
+- [Improvement tracker](docs/IMPROVEMENTS.md)
+- [Feature plan](docs/FEATURE_PLAN.md)
+
 ## Common problems
 
 - `No module named customtkinter`: activate `.venv` and install the requirements again.
