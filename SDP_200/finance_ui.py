@@ -81,7 +81,8 @@ def open_tracker(kind, parent=None, on_change=None, store=None):
             for row in rows:
                 if sale:
                     amount = money(row['total_paisa']) if row['total_paisa'] is not None else 'Invalid amount'
-                    values = (row['id'], row['crop_name'], row['quantity'], row['price'], amount, row['date'])
+                    crop_label = names.get(row['crop_id'], row['crop_name'] or 'Unassigned')
+                    values = (row['id'], crop_label, row['quantity'], row['price'], amount, row['date'])
                 else:
                     values = (row['id'], names.get(row['crop_id'], 'Unassigned'), row['category'],
                               money(row['amount_paisa']), row['date'], row['notes'])
