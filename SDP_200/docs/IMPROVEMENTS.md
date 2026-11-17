@@ -19,12 +19,12 @@ This file tracks planned improvements for `SDP_200`.
   - [ ] Associate crops, sales, and expenses with the logged-in user.
   - [ ] Add a secure password-reset workflow.
 
-- [ ] **2. Improve crop management**
-  - [ ] Display saved crops in a table.
-  - [ ] Allow users to edit a crop.
-  - [ ] Allow users to delete a crop with confirmation.
-  - [ ] Prevent accidental duplicate crops.
-  - [ ] Provide useful sample crop data for new installations.
+- [x] **2. Improve crop management**
+  - [x] Display saved crops in a table.
+  - [x] Allow users to edit a crop.
+  - [x] Allow users to delete a crop with confirmation.
+  - [x] Prevent accidental duplicate crops.
+  - [x] Provide useful sample crop data for new installations.
 
 - [ ] **3. Improve crop suggestions**
   - [ ] Rank partial matches instead of requiring four exact matches.
@@ -70,7 +70,7 @@ This file tracks planned improvements for `SDP_200`.
 
 - [ ] Secure password storage.
 - [ ] Add per-user data ownership.
-- [ ] Add crop editing and deletion.
+- [x] Add crop editing and deletion.
 - [ ] Add automatic tests with GitHub Actions.
 
 ## Completed work log
@@ -79,3 +79,4 @@ Add a dated note here whenever a numbered section is completed.
 
 | Date | Section | Commit |
 | --- | --- | --- |
+| 2026-11-17 | 2. Improve crop management | `93062e2` through `7926e81` |

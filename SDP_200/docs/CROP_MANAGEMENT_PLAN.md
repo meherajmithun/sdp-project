@@ -2,9 +2,9 @@
 
 This document explains how the Crop Management feature will be improved. It is written as a study guide so a beginner can understand what will be built, why each part is needed, and how the work will be checked.
 
-> Planning status: **Waiting for implementation confirmation**
+> Planning status: **Implemented and verified on 2026-11-17**
 >
-> This document does not mean the feature is finished. Completed work will be marked in `IMPROVEMENTS.md` only after implementation and testing.
+> The crop data and finance tests pass under the project environment. The improvement is marked complete in `IMPROVEMENTS.md`.
 
 ## 1. Goal
 
@@ -203,17 +203,17 @@ Implementation will use small, focused commits without the `feat` prefix:
 
 The improvement will be considered complete only when:
 
-- [ ] Saved crops appear in the table.
-- [ ] Users can add crops.
-- [ ] Users can edit crops.
-- [ ] Users can safely delete unused crops.
-- [ ] Referenced crops cannot be accidentally deleted.
-- [ ] Duplicate crops are prevented.
-- [ ] Sample data is optional and safe to load repeatedly.
-- [ ] All crop tests pass.
-- [ ] All existing finance tests pass.
-- [ ] `IMPROVEMENTS.md` is updated.
-- [ ] The completed changes are pushed to GitHub.
+- [x] Saved crops appear in the table.
+- [x] Users can add crops.
+- [x] Users can edit crops.
+- [x] Users can safely delete unused crops.
+- [x] Referenced crops cannot be accidentally deleted.
+- [x] Duplicate crops are prevented.
+- [x] Sample data is optional and safe to load repeatedly.
+- [x] All crop tests pass.
+- [x] All existing finance tests pass.
+- [x] `IMPROVEMENTS.md` is updated.
+- [x] The completed changes are pushed to GitHub.
 
 ## 7. Important beginner concepts
 
