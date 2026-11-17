@@ -123,6 +123,23 @@ def open_crop_management(parent, store=None):
     refresh_button = ctk.CTkButton(table_actions, text='Refresh List', width=115,
                                    fg_color='#607d65')
     refresh_button.pack(side='left', padx=10)
+    delete_button = ctk.CTkButton(table_actions, text='Delete Selected', width=135,
+                                  fg_color='#b71c1c')
+    delete_button.pack(side='right')
+    samples_button = ctk.CTkButton(table_actions, text='Load Sample Crops', width=150,
+                                   fg_color='#3f6f4a')
+    samples_button.pack(side='right', padx=10)
+
+    confirmation = ctk.CTkFrame(table_card, fg_color='#fff8e1',
+                                border_width=1, border_color='#d9b44a')
+    confirmation_label = ctk.CTkLabel(
+        confirmation, text='', wraplength=560, text_color='#5d4a12')
+    confirmation_label.pack(side='left', fill='x', expand=True, padx=12, pady=10)
+    confirm_button = ctk.CTkButton(confirmation, text='Confirm', width=115)
+    confirm_button.pack(side='left', padx=5, pady=8)
+    cancel_button = ctk.CTkButton(confirmation, text='Cancel', width=80,
+                                  fg_color='#607d65')
+    cancel_button.pack(side='left', padx=(5, 10), pady=8)
 
     editing_id = None
 
@@ -159,6 +176,16 @@ def open_crop_management(parent, store=None):
             set_status('Select a crop from the table first.', True)
             return None
         return int(selection[0])
+
+    def hide_confirmation():
+        confirmation.pack_forget()
+
+    def show_confirmation(message, button_text, command, dangerous=False):
+        confirmation_label.configure(text=message)
+        confirm_button.configure(
+            text=button_text, command=command,
+            fg_color='#b71c1c' if dangerous else '#2e7d32')
+        confirmation.pack(fill='x', padx=14, pady=(0, 14))
 
     def refresh_table(select=None):
         try:
@@ -214,6 +241,7 @@ def open_crop_management(parent, store=None):
             refresh_table()
             return
         editing_id = crop_id
+        hide_confirmation()
         crop_name.delete(0, 'end')
         crop_name.insert(0, crop['crop_name'] or '')
         days_to_harvest.delete(0, 'end')
@@ -229,10 +257,73 @@ def open_crop_management(parent, store=None):
         set_status('Editing mode is active. Clear the form to cancel.')
         crop_name.focus_set()
 
+    def delete_crop(crop_id):
+        nonlocal editing_id
+        try:
+            crop = store.get(crop_id)
+            store.delete(crop_id)
+        except (ValueError, sqlite3.Error, OSError) as exc:
+            hide_confirmation()
+            set_status(str(exc), True)
+            return
+        if editing_id == crop_id:
+            clear_form(clear_message=False)
+        hide_confirmation()
+        refresh_table()
+        set_status(f"'{crop['crop_name']}' was deleted.")
+        win._root().event_generate('<<FinanceChanged>>', when='tail')
+
+    def request_delete():
+        crop_id = selected_id()
+        if crop_id is None:
+            return
+        try:
+            crop = store.get(crop_id)
+            references = store.reference_counts(crop_id)
+        except (sqlite3.Error, OSError) as exc:
+            set_status(f'Cannot check the crop: {exc}', True)
+            return
+        if not crop:
+            set_status('The selected crop no longer exists. Refresh the list.', True)
+            refresh_table()
+            return
+        if references['sales'] or references['expenses']:
+            set_status(
+                f"'{crop['crop_name']}' is used by {references['sales']} sale(s) and "
+                f"{references['expenses']} expense(s). Keep the crop to protect those records.",
+                True)
+            return
+        show_confirmation(
+            f"Permanently delete '{crop['crop_name']}'? This cannot be undone.",
+            'Confirm Delete', lambda: delete_crop(crop_id), dangerous=True)
+
+    def load_samples():
+        try:
+            added = store.load_samples()
+        except (ValueError, sqlite3.Error, OSError) as exc:
+            hide_confirmation()
+            set_status(f'Cannot load sample crops: {exc}', True)
+            return
+        hide_confirmation()
+        refresh_table()
+        if added:
+            set_status(f'{added} sample crop' + ('' if added == 1 else 's') + ' added.')
+            win._root().event_generate('<<FinanceChanged>>', when='tail')
+        else:
+            set_status('All sample crops are already in the catalog.')
+
+    def request_samples():
+        show_confirmation(
+            'Add five starter crops? Existing crop names will be skipped.',
+            'Load Samples', load_samples)
+
     primary_button.configure(command=save_crop)
     clear_button.configure(command=clear_form)
     edit_button.configure(command=edit_selected)
     refresh_button.configure(command=refresh_table)
+    delete_button.configure(command=request_delete)
+    samples_button.configure(command=request_samples)
+    cancel_button.configure(command=hide_confirmation)
     tree.bind('<Double-1>', edit_selected)
     refresh_table()
     return win
