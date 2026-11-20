@@ -57,9 +57,12 @@ def run():
             pump()
             assert bool(root.attributes('-fullscreen')), (app.fullscreen, root.attributes('-fullscreen'))
             assert root.winfo_width() >= root.winfo_screenwidth() * .9
+            button(root, 'Sign in').invoke()
+            pump()
+            one_window()
             button(root, 'Forgot Password?').invoke()
             one_window()
-            button(root, 'New User? Register').invoke()
+            button(root, 'Create an account').invoke()
             one_window()
             entries(app.body, ['demo', 'test-only'])
             button(root, 'Register').invoke()
