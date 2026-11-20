@@ -3,7 +3,7 @@ import sqlite3
 import tempfile
 import unittest
 from pathlib import Path
-from finance_data import FinanceStore, export_csv, paisa, positive_number, valid_date
+from finance_data import FinanceStore, export_csv, export_pdf, paisa, positive_number, valid_date
 
 
 class FinanceTests(unittest.TestCase):
@@ -68,6 +68,16 @@ class FinanceTests(unittest.TestCase):
         self.assertIn(['Balance', '-1.25'], rows)
         self.assertEqual(rows[3][-1], "'=SUM(A1:A3)")
         self.assertEqual(rows[1], ['Crop', 'Rice', 'Start', '2026-11-01', 'End', '2026-11-30'])
+
+    def test_pdf_export_creates_readable_pdf(self):
+        self.store.add_sale(1, '10', '25', '17-11-2026')
+        report = self.store.report()
+        path = self.directory / 'report.pdf'
+        export_pdf(path, report)
+        data = path.read_bytes()
+        self.assertTrue(data.startswith(b'%PDF-1.4'))
+        self.assertIn(b'Smart Agricultural System', data)
+        self.assertIn(b'Sales revenue', data)
 
 
 class MigrationTests(unittest.TestCase):

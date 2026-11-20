@@ -5,7 +5,7 @@ from tkinter import Misc, filedialog, ttk
 
 import customtkinter as ctk
 
-from finance_data import CATEGORIES, FinanceStore, export_csv, money
+from finance_data import CATEGORIES, FinanceStore, export_csv, export_pdf, money
 from ui_theme import (
     BODY_BOLD, BODY_FONT, BORDER, BUTTON_FONT, COMBO_STYLE, DANGER,
     DANGER_HOVER, DEW, INK, LEAF, LEAF_HOVER, MUTED, PAGE_FONT, PAPER,
@@ -296,7 +296,7 @@ class FinanceDashboard(ctk.CTkFrame):
             font=BUTTON_FONT
         ).grid(row=1, column=3, padx=(10, 5), pady=(4, 12))
         ctk.CTkButton(
-            filters, text='Export CSV', command=self.export, width=105,
+            filters, text='Preview report', command=self.preview, width=125,
             height=38, fg_color=SOIL, hover_color=SOIL_HOVER,
             font=BUTTON_FONT
         ).grid(row=1, column=4, padx=(5, 14), pady=(4, 12))
@@ -381,17 +381,100 @@ class FinanceDashboard(ctk.CTkFrame):
         self.set_status(message, warning=bool(report['warnings']))
         return report
 
-    def export(self):
+    def report_lines(self, report):
+        lines = [
+            'Smart Agricultural System',
+            'Farm finance report',
+            f"Crop: {report['crop']}",
+            f"Date range: {report['start'] or 'All dates'} to {report['end'] or 'All dates'}",
+            '',
+            f"Sales revenue     BDT {money(report['revenue'])}",
+            f"Recorded expenses BDT {money(report['expenses'])}",
+            f"Surplus / deficit BDT {money(report['balance'])}",
+            '',
+            f"{len(report['records'])} record(s)",
+        ]
+        for row in report['records']:
+            detail = row['kind'].title() + f"  •  {row['crop']}  •  {row['date']}  •  BDT {money(row['amount_paisa'])}"
+            lines.append(detail)
+            if row.get('category') or row.get('notes'):
+                lines.append('  ' + ' / '.join(part for part in (row.get('category'), row.get('notes')) if part))
+        if not report['records']:
+            lines.append('No records found for these filters.')
+        if report['warnings']:
+            lines.extend(['', 'Data warnings:'] + [f'• {warning}' for warning in report['warnings']])
+        return lines
+
+    def preview(self):
         try:
             report = self.refresh()
             if report is None:
                 return
-            path = filedialog.asksaveasfilename(
-                parent=self, defaultextension='.csv',
-                filetypes=[('CSV file', '*.csv')],
-                initialfile='farm-finances.csv')
-            if path:
-                export_csv(path, report)
-                self.set_status('Your filtered report has been saved.')
+            if hasattr(self, 'preview_panel'):
+                self.preview_panel.destroy()
+            self.preview_panel = ctk.CTkFrame(
+                self, fg_color=DEW, border_width=1, border_color=BORDER,
+                corner_radius=12)
+            self.preview_panel.place(relx=0, rely=0, relwidth=1, relheight=1)
+            heading = ctk.CTkFrame(self.preview_panel, fg_color=PINE, corner_radius=0)
+            heading.pack(fill='x')
+            ctk.CTkLabel(
+                heading, text='Report preview', font=PAGE_FONT, text_color=PAPER
+            ).pack(anchor='w', padx=24, pady=(16, 2))
+            ctk.CTkLabel(
+                heading, text='Review the filtered figures before downloading.',
+                font=BODY_FONT, text_color=SAGE
+            ).pack(anchor='w', padx=24, pady=(0, 14))
+            preview = ctk.CTkTextbox(
+                self.preview_panel, fg_color=PAPER, border_width=1,
+                border_color=BORDER, text_color=INK, font=BODY_FONT,
+                wrap='word', corner_radius=10)
+            preview.pack(fill='both', expand=True, padx=22, pady=18)
+            preview.insert('1.0', '\n'.join(self.report_lines(report)))
+            preview.configure(state='disabled')
+            actions = ctk.CTkFrame(self.preview_panel, fg_color='transparent')
+            actions.pack(fill='x', padx=22, pady=(0, 18))
+            ctk.CTkButton(
+                actions, text='Download PDF', command=lambda: self.download_pdf(report),
+                width=145, height=40, fg_color=LEAF, hover_color=LEAF_HOVER,
+                font=BUTTON_FONT
+            ).pack(side='left')
+            ctk.CTkButton(
+                actions, text='Export CSV', command=lambda: self.download_csv(report),
+                width=125, height=40, fg_color=SOIL, hover_color=SOIL_HOVER,
+                font=BUTTON_FONT
+            ).pack(side='left', padx=10)
+            ctk.CTkButton(
+                actions, text='Back to dashboard', command=self.close_preview,
+                width=145, height=40, fg_color=SAGE, hover_color=BORDER,
+                text_color=PINE, font=BUTTON_FONT
+            ).pack(side='right')
         except (ValueError, sqlite3.Error, OSError) as exc:
             self.set_status(f'Cannot export: {exc}', warning=True)
+
+    def close_preview(self):
+        if hasattr(self, 'preview_panel'):
+            self.preview_panel.destroy()
+            del self.preview_panel
+
+    def download_pdf(self, report):
+        try:
+            path = filedialog.asksaveasfilename(
+                parent=self, defaultextension='.pdf',
+                filetypes=[('PDF file', '*.pdf')], initialfile='farm-finances.pdf')
+            if path:
+                export_pdf(path, report)
+                self.set_status('Your PDF report has been downloaded.')
+        except (OSError, ValueError) as exc:
+            self.set_status(f'Cannot download PDF: {exc}', warning=True)
+
+    def download_csv(self, report):
+        try:
+            path = filedialog.asksaveasfilename(
+                parent=self, defaultextension='.csv',
+                filetypes=[('CSV file', '*.csv')], initialfile='farm-finances.csv')
+            if path:
+                export_csv(path, report)
+                self.set_status('Your filtered CSV report has been saved.')
+        except (OSError, ValueError) as exc:
+            self.set_status(f'Cannot export CSV: {exc}', warning=True)

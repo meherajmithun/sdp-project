@@ -120,13 +120,18 @@ def run():
             assert store.rows('expenses') == []
             assert dashboard.cards[2].cget('text') == 'BDT 250.00'
             navigate('Dashboard')
-            filedialog.asksaveasfilename = lambda **kw: ''
-            dashboard.export()
-            output = Path(folder) / 'report.csv'
-            assert not output.exists()
+            dashboard.preview()
+            pump()
+            one_window()
+            output = Path(folder) / 'report.pdf'
             filedialog.asksaveasfilename = lambda **kw: str(output)
-            dashboard.export()
-            assert output.exists()
+            button(root, 'Download PDF').invoke()
+            assert output.exists() and output.read_bytes().startswith(b'%PDF-1.4')
+            csv_output = Path(folder) / 'report.csv'
+            filedialog.asksaveasfilename = lambda **kw: str(csv_output)
+            button(root, 'Export CSV').invoke()
+            assert csv_output.exists()
+            button(root, 'Back to dashboard').invoke()
             one_window()
 
             print('Checking full-screen controls and session cleanup', flush=True)

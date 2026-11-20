@@ -206,3 +206,76 @@ def export_csv(path, report):
             writer.writerow([key.title(), f'{Decimal(report[key]) / 100:.2f}'])
         for warning in report['warnings']:
             writer.writerow(['Data warning', warning])
+
+
+def _pdf_escape(value):
+    text = str(value).encode('latin-1', 'replace').decode('latin-1')
+    return text.replace('\\', '\\\\').replace('(', '\\(').replace(')', '\\)')
+
+
+def export_pdf(path, report):
+    """Write a small, dependency-free PDF report suitable for printing."""
+    lines = [
+        'Smart Agricultural System — Farm Finance Report',
+        f"Crop: {report['crop']}",
+        f"Date range: {report['start'] or 'All dates'} to {report['end'] or 'All dates'}",
+        '',
+        f"Sales revenue: BDT {Decimal(report['revenue']) / 100:,.2f}",
+        f"Recorded expenses: BDT {Decimal(report['expenses']) / 100:,.2f}",
+        f"Surplus / deficit: BDT {Decimal(report['balance']) / 100:,.2f}",
+        '',
+        'Records',
+        'Type | ID | Crop | Date | Amount (BDT)',
+    ]
+    for row in report['records']:
+        lines.append(
+            f"{row['kind'].title()} | {row['id']} | {row['crop']} | "
+            f"{row['date']} | {Decimal(row['amount_paisa']) / 100:,.2f}"
+        )
+        if row.get('category') or row.get('notes'):
+            detail = ' / '.join(part for part in (row.get('category'), row.get('notes')) if part)
+            lines.append(f'  Details: {detail}')
+    if not report['records']:
+        lines.append('No records found for these filters.')
+    if report['warnings']:
+        lines.extend(['', 'Data warnings:'])
+        lines.extend(f'- {warning}' for warning in report['warnings'])
+
+    page_lines = [lines[index:index + 42] for index in range(0, len(lines), 42)] or [[]]
+    objects = []
+    objects.append(b'<< /Type /Catalog /Pages 2 0 R >>')
+    page_ids = [4 + index * 2 for index in range(len(page_lines))]
+    objects.append(('<< /Type /Pages /Kids [%s] /Count %d >>' %
+                    (' '.join(f'{page_id} 0 R' for page_id in page_ids), len(page_ids))).encode())
+    objects.append(b'<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>')
+    for index, page in enumerate(page_lines):
+        content_id = 5 + index * 2
+        page_id = 4 + index * 2
+        stream_lines = ['BT', '/F1 10 Tf', '50 760 Td', '14 TL']
+        for line in page:
+            stream_lines.append(f'({_pdf_escape(line[:115])}) Tj')
+            stream_lines.append('0 -1 Td')
+        stream_lines.append('ET')
+        stream = '\n'.join(stream_lines).encode('latin-1', 'replace')
+        objects.append((
+            f'<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] '
+            f'/Resources << /Font << /F1 3 0 R >> >> /Contents {content_id} 0 R >>'
+        ).encode())
+        objects.append((f'<< /Length {len(stream)} >>\nstream\n'.encode() + stream + b'\nendstream'))
+
+    pdf = bytearray(b'%PDF-1.4\n%\xe2\xe3\xcf\xd3\n')
+    offsets = [0]
+    for object_id, obj in enumerate(objects, start=1):
+        offsets.append(len(pdf))
+        pdf.extend(f'{object_id} 0 obj\n'.encode())
+        pdf.extend(obj)
+        pdf.extend(b'\nendobj\n')
+    xref = len(pdf)
+    pdf.extend(f'xref\n0 {len(objects) + 1}\n'.encode())
+    pdf.extend(b'0000000000 65535 f \n')
+    for offset in offsets[1:]:
+        pdf.extend(f'{offset:010d} 00000 n \n'.encode())
+    pdf.extend((f'trailer\n<< /Size {len(objects) + 1} /Root 1 0 R >>\n'
+                f'startxref\n{xref}\n%%EOF\n').encode())
+    with open(path, 'wb') as file:
+        file.write(pdf)

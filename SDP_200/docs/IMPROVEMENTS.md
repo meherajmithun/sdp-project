@@ -48,7 +48,7 @@ This file tracks planned improvements for `SDP_200`.
   - [ ] Add monthly revenue, expense, and balance charts.
   - [ ] Add expense-category summaries.
   - [ ] Add profit-trend reporting.
-  - [ ] Add PDF export while keeping CSV export.
+  - [x] Preview filtered reports before downloading PDF or CSV.
 
 - [ ] **6. Improve engineering quality**
   - [ ] Add automated tests for authentication.

@@ -43,6 +43,9 @@ python main.py
 
 Register an account, sign in, then add a crop from **Crop Management**. Press `Esc` to leave full-screen mode.
 
+On the **Farm finances** dashboard, choose **Preview report** to review the
+current crop/date filters before downloading a PDF or CSV report.
+
 ## Run tests
 
 ```bash
